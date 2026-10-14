@@ -11,7 +11,7 @@ Route::get('/p/{token}', [PublicProposalController::class, 'show'])->name('propo
 Route::post('/p/{token}/accept', [PublicProposalController::class, 'accept'])->name('proposals.accept');
 Route::post('/p/{token}/decline', [PublicProposalController::class, 'decline'])->name('proposals.decline');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware('auth')->group(function () {
     Route::post('/proposals/{proposal}/send', [ProposalController::class, 'send'])->name('proposals.send');
     Route::resource('proposals', ProposalController::class);
 

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/webhooks/whatsapp', [WebhookController::class, 'verify'])->name('webhooks.whatsapp');
 Route::post('/webhooks/whatsapp', [WebhookController::class, 'receive']);
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware('auth')->group(function () {
     // WhatsApp threads
     Route::get('/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp.index');
     Route::get('/whatsapp/{lead}', [WhatsAppController::class, 'show'])->name('whatsapp.thread');
