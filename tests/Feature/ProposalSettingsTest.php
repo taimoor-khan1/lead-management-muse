@@ -21,8 +21,11 @@ class ProposalSettingsTest extends TestCase
 
         // routes/proposals.php is wired into web.php by the coordinator.
         // Load it directly here so this test runs standalone until then.
+        // RouteServiceProvider::refreshNameLookups() normally runs after boot;
+        // since we register routes late we must refresh the name table manually.
         if (! Route::has('proposals.index')) {
             require base_path('routes/proposals.php');
+            Route::getRoutes()->refreshNameLookups();
         }
     }
 

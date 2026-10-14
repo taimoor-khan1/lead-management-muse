@@ -22,7 +22,7 @@ function addNote() {
 
 function deleteNote(id) {
     if (confirm('Delete this note?')) {
-        router.delete(route('leads.notes.destroy', [props.lead.id, id]), { preserveScroll: true });
+        router.delete(route('leads.notes.destroy', id), { preserveScroll: true });
     }
 }
 

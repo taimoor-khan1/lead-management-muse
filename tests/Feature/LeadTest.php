@@ -19,8 +19,12 @@ class LeadTest extends TestCase
 
         // routes/leads.php is a partial wired by the coordinator; load it here
         // so these tests are self-contained until web.php requires it.
+        // refreshNameLookups() is needed because Laravel only rebuilds the
+        // name lookup table on app boot, not for routes added afterwards.
         if (! Route::has('leads.index')) {
             require base_path('routes/leads.php');
+            Route::getRoutes()->refreshNameLookups();
+            Route::getRoutes()->refreshActionLookups();
         }
     }
 
