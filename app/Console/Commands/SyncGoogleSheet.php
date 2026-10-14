@@ -17,7 +17,7 @@ class SyncGoogleSheet extends Command
 
         $this->info("Imported: {$result['imported']} | Skipped: {$result['skipped']}");
 
-        if (!empty($result['message'])) {
+        if (! empty($result['message'])) {
             $this->line($result['message']);
         }
 

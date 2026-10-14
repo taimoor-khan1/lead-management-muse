@@ -19,10 +19,12 @@ class LeadTest extends TestCase
 
         // routes/leads.php is a partial wired by the coordinator; load it here
         // so these tests are self-contained until web.php requires it.
+        // Wrapped in the 'web' group exactly like web.php does in production
+        // (SubstituteBindings, session, etc.).
         // refreshNameLookups() is needed because Laravel only rebuilds the
         // name lookup table on app boot, not for routes added afterwards.
         if (! Route::has('leads.index')) {
-            require base_path('routes/leads.php');
+            Route::middleware('web')->group(fn () => require base_path('routes/leads.php'));
             Route::getRoutes()->refreshNameLookups();
             Route::getRoutes()->refreshActionLookups();
         }
@@ -31,6 +33,24 @@ class LeadTest extends TestCase
     protected function user(): User
     {
         return User::factory()->create();
+    }
+
+    /**
+     * Headers for JSON (X-Inertia) page requests: avoids full-page renders
+     * (which need a Vite build) and satisfies the asset-version check.
+     */
+    protected function inertiaHeaders(): array
+    {
+        $version = null;
+
+        if (file_exists($manifest = public_path('build/manifest.json'))) {
+            $version = hash_file('xxh128', $manifest);
+        }
+
+        return array_filter([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $version,
+        ]);
     }
 
     public function test_guests_are_redirected_to_login(): void
@@ -46,13 +66,13 @@ class LeadTest extends TestCase
 
         Lead::factory()->create(['business_name' => 'Al-Noor Bakery']);
 
-        $response = $this->get(route('leads.index'));
-
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Leads/Index')
-            ->has('leads.data', 1)
-        );
+        // X-Inertia requests get a JSON page object (no Vite build needed).
+        $this->get(route('leads.index'), $this->inertiaHeaders())
+            ->assertOk()
+            ->assertJsonPath('component', 'Leads/Index')
+            ->assertJsonCount(1, 'props.leads.data')
+            ->assertJsonPath('props.leads.data.0.business_name', 'Al-Noor Bakery')
+            ->assertJsonPath('props.stats.total', 1);
     }
 
     public function test_user_can_create_lead(): void
@@ -125,19 +145,15 @@ class LeadTest extends TestCase
         Lead::factory()->create(['business_name' => 'Lahore Fitness Gym', 'phone' => '0300-1111111', 'email' => 'gym@example.com']);
         Lead::factory()->create(['business_name' => 'Karachi Food Point', 'phone' => '0300-2222222', 'email' => 'food@example.com']);
 
-        $this->get(route('leads.index', ['search' => 'Fitness']))
-            ->assertInertia(fn ($page) => $page
-                ->component('Leads/Index')
-                ->has('leads.data', 1)
-                ->where('leads.data.0.business_name', 'Lahore Fitness Gym')
-            );
+        $this->get(route('leads.index', ['search' => 'Fitness']), $this->inertiaHeaders())
+            ->assertOk()
+            ->assertJsonCount(1, 'props.leads.data')
+            ->assertJsonPath('props.leads.data.0.business_name', 'Lahore Fitness Gym');
 
-        $this->get(route('leads.index', ['search' => '0300-2222222']))
-            ->assertInertia(fn ($page) => $page
-                ->component('Leads/Index')
-                ->has('leads.data', 1)
-                ->where('leads.data.0.business_name', 'Karachi Food Point')
-            );
+        $this->get(route('leads.index', ['search' => '0300-2222222']), $this->inertiaHeaders())
+            ->assertOk()
+            ->assertJsonCount(1, 'props.leads.data')
+            ->assertJsonPath('props.leads.data.0.business_name', 'Karachi Food Point');
     }
 
     public function test_stage_filter(): void
@@ -147,12 +163,10 @@ class LeadTest extends TestCase
         Lead::factory()->create(['business_name' => 'Stage New Lead', 'stage' => 'new']);
         Lead::factory()->create(['business_name' => 'Stage Won Lead', 'stage' => 'won']);
 
-        $this->get(route('leads.index', ['stage' => 'won']))
-            ->assertInertia(fn ($page) => $page
-                ->component('Leads/Index')
-                ->has('leads.data', 1)
-                ->where('leads.data.0.business_name', 'Stage Won Lead')
-            );
+        $this->get(route('leads.index', ['stage' => 'won']), $this->inertiaHeaders())
+            ->assertOk()
+            ->assertJsonCount(1, 'props.leads.data')
+            ->assertJsonPath('props.leads.data.0.business_name', 'Stage Won Lead');
     }
 
     public function test_csv_import_creates_leads_and_skips_duplicates(): void
@@ -162,9 +176,9 @@ class LeadTest extends TestCase
         Lead::factory()->create(['business_name' => 'Existing Business']);
 
         $csv = "Business Name,Contact Person,Phone,Email,Address,City,Industry,Website,Notes,Suggested Service\n"
-            . "New Import Co,Ali Raza,0300-3333333,new@import.co,Main Road,Lahore,Restaurant,,Fresh lead,Website\n"
-            . "Existing Business,Someone,0300-4444444,dup@example.com,,Karachi,Salon,,,Website Revamp\n"
-            . "NEW IMPORT CO,Other,0300-5555555,other@example.com,,Islamabad,Hotel,,,Website\n";
+            ."New Import Co,Ali Raza,0300-3333333,new@import.co,Main Road,Lahore,Restaurant,,Fresh lead,Website\n"
+            ."Existing Business,Someone,0300-4444444,dup@example.com,,Karachi,Salon,,,Website Revamp\n"
+            ."NEW IMPORT CO,Other,0300-5555555,other@example.com,,Islamabad,Hotel,,,Website\n";
 
         $file = UploadedFile::fake()->createWithContent('leads.csv', $csv);
 

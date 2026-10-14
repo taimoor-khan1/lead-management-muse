@@ -21,10 +21,16 @@ class ProposalSettingsTest extends TestCase
 
         // routes/proposals.php is wired into web.php by the coordinator.
         // Load it directly here so this test runs standalone until then.
+        // Wrapped in the 'web' middleware group exactly like web.php, so
+        // SubstituteBindings (implicit route-model binding) applies.
         // RouteServiceProvider::refreshNameLookups() normally runs after boot;
         // since we register routes late we must refresh the name table manually.
+        // withoutVite(): the Vue pages aren't compiled (no npm run build in CI).
+        $this->withoutVite();
         if (! Route::has('proposals.index')) {
-            require base_path('routes/proposals.php');
+            Route::middleware('web')->group(function () {
+                require base_path('routes/proposals.php');
+            });
             Route::getRoutes()->refreshNameLookups();
         }
     }
@@ -243,8 +249,9 @@ class ProposalSettingsTest extends TestCase
 
         $response = $this->get(route('settings.index'));
         $response->assertOk();
-        // Masked preview shown, raw secret never rendered.
-        $response->assertSee('••••5678', false);
+        // Masked preview passed as a prop, raw secret never rendered.
+        $masked = $response->viewData('page')['props']['masked']['WHATSAPP_TOKEN'] ?? null;
+        $this->assertEquals('••••5678', $masked);
         $response->assertDontSee('abcdefgh12345678');
     }
 }

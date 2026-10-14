@@ -25,16 +25,16 @@ class GoogleSheetService
         }
 
         try {
-            $client = new GoogleClient();
+            $client = new GoogleClient;
 
-            if (!empty($credsJson)) {
+            if (! empty($credsJson)) {
                 $auth = json_decode($credsJson, true);
-                if (!is_array($auth)) {
+                if (! is_array($auth)) {
                     return ['imported' => 0, 'skipped' => 0, 'message' => 'Google Sheets sync failed: GOOGLE_CREDENTIALS_JSON is not valid JSON.'];
                 }
                 $client->setAuthConfig($auth);
             } else {
-                if (!is_file($credsPath)) {
+                if (! is_file($credsPath)) {
                     return ['imported' => 0, 'skipped' => 0, 'message' => 'Google Sheets sync failed: credentials file not found at GOOGLE_CREDENTIALS_PATH.'];
                 }
                 $client->setAuthConfig($credsPath);
@@ -58,7 +58,7 @@ class GoogleSheetService
      * Skips rows with a blank business name and business names that already exist
      * (case-insensitive), including duplicates inside the same batch.
      *
-     * @param array<int, array<string, mixed>> $rows
+     * @param  array<int, array<string, mixed>>  $rows
      */
     public function importRows(array $rows, string $source = 'google_sheet'): array
     {
@@ -75,6 +75,7 @@ class GoogleSheetService
 
             if ($data === null) {
                 $skipped++;
+
                 continue;
             }
 
@@ -82,6 +83,7 @@ class GoogleSheetService
 
             if (isset($existing[$key])) {
                 $skipped++;
+
                 continue;
             }
 
@@ -119,6 +121,7 @@ class GoogleSheetService
                 if (isset($headers[0])) {
                     $headers[0] = ltrim($headers[0], "\xEF\xBB\xBF"); // strip BOM
                 }
+
                 continue;
             }
 
