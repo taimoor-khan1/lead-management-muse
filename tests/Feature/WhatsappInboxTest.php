@@ -21,11 +21,14 @@ class WhatsappInboxTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutVite();
         $this->user = User::factory()->create();
 
-        // Load this module's routes until the coordinator requires routes/whatsapp.php in web.php.
+        // Load this module's routes the same way the app will (inside the
+        // "web" middleware group) until the coordinator requires
+        // routes/whatsapp.php in web.php.
         if (! Route::has('whatsapp.index')) {
-            require base_path('routes/whatsapp.php');
+            Route::middleware('web')->group(base_path('routes/whatsapp.php'));
             app('router')->getRoutes()->refreshNameLookups();
         }
     }

@@ -17,14 +17,14 @@ class WebhookController extends Controller
     {
         $verifyToken = config('services.whatsapp.verify_token');
 
-        if (
-            $request->query('hub.mode') === 'subscribe'
-            && $verifyToken
-            && $request->query('hub.verify_token') === $verifyToken
-            && $request->query('hub.challenge') !== null
-        ) {
-            return response($request->query('hub.challenge'), 200)
-                ->header('Content-Type', 'text/plain');
+        // NB: PHP/Symfony parse query-string dots as underscores, so Meta's
+        // hub.mode / hub.verify_token / hub.challenge arrive as hub_mode etc.
+        $mode = $request->query('hub.mode') ?? $request->query('hub_mode');
+        $token = $request->query('hub.verify_token') ?? $request->query('hub_verify_token');
+        $challenge = $request->query('hub.challenge') ?? $request->query('hub_challenge');
+
+        if ($mode === 'subscribe' && $verifyToken && $token === $verifyToken && $challenge !== null) {
+            return response($challenge, 200)->header('Content-Type', 'text/plain');
         }
 
         abort(403);

@@ -57,7 +57,8 @@ class LeadTest extends TestCase
 
     public function test_user_can_create_lead(): void
     {
-        $user = $this->actingAs($this->user());
+        $user = $this->user();
+        $this->actingAs($user);
 
         $response = $this->post(route('leads.store'), [
             'business_name' => 'City Dental Clinic',

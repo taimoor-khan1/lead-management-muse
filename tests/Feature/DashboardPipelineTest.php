@@ -27,8 +27,12 @@ class DashboardPipelineTest extends TestCase
         // Wire the module's routes the same way the coordinator will in web.php.
         // require (not require_once): each test rebuilds the app, so the file
         // must be re-included per test; it declares no functions/classes.
+        // Laravel builds the route-name lookup only at boot, so refresh it
+        // after adding routes mid-test.
         if (! Route::has('pipeline.index')) {
             require base_path('routes/dashboard.php');
+            Route::getRoutes()->refreshNameLookups();
+            Route::getRoutes()->refreshActionLookups();
         }
 
         // The Breeze closure on GET /dashboard is registered first in web.php, so
@@ -42,14 +46,11 @@ class DashboardPipelineTest extends TestCase
         $this->assertTrue(Route::has('pipeline.index'));
         $this->assertTrue(Route::has('pipeline.move'));
 
-        // routes/dashboard.php must register the dashboard route on DashboardController.
-        // (The Breeze closure in web.php currently holds the 'dashboard' name lookup;
-        // the coordinator removes it at integration so this registration takes over.)
-        $mine = collect(Route::getRoutes()->getRoutes())->first(
-            fn ($r) => $r->getName() === 'dashboard'
-                && $r->getActionName() === DashboardController::class.'@index'
-        );
-        $this->assertNotNull($mine, 'DashboardController dashboard route is registered');
+        // routes/dashboard.php registers the dashboard route on DashboardController.
+        // (GET /dashboard still hits the Breeze closure first in this test env;
+        // the coordinator removes that closure at integration so this route takes over.)
+        $route = Route::getRoutes()->getByName('dashboard');
+        $this->assertEquals(DashboardController::class.'@index', $route->getActionName());
     }
 
     public function test_dashboard_requires_auth(): void
