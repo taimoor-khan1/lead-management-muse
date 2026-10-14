@@ -14,6 +14,7 @@ const form = useForm({
 });
 
 const VARIABLES = ['business_name', 'contact_person', 'city', 'industry', 'suggested_service'];
+const varLabel = (v) => '{{' + v + '}}';
 
 const sampleLead = {
     business_name: 'Green Acres Farmhouse',
@@ -30,8 +31,7 @@ const trackCursor = () => {
     if (bodyRef.value) cursorPos = bodyRef.value.selectionStart ?? form.body.length;
 };
 
-const insertVar = (v) => {
-    const tag = `{{${v}}}`;
+const insertVar = (v) => {    const tag = `{{${v}}}`;
     const before = form.body.slice(0, cursorPos);
     const after = form.body.slice(cursorPos);
     form.body = before + tag + after;
@@ -85,7 +85,7 @@ const inputCls = 'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none 
                     <div class="flex flex-wrap gap-2 mb-2">
                         <button v-for="v in VARIABLES" :key="v" type="button" @click="insertVar(v)"
                             class="text-xs font-medium px-2 py-1 rounded-md border" style="border-color:#e5e7e9;color:#3178c6;background:#edf5ff;">
-                            {{ '{{' + v + '}}' }}
+                            {{ varLabel(v) }}
                         </button>
                     </div>
                     <textarea ref="bodyRef" v-model="form.body" rows="10" :class="inputCls" @click="trackCursor" @keyup="trackCursor"

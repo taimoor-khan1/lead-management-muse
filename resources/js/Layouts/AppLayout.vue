@@ -19,6 +19,7 @@ const nav = [
 ];
 
 const isActive = (patterns) => patterns.some((p) => route().current(p));
+</script>
 
 <template>
     <div class="min-h-screen" style="background:#eef0f2; font-family:'DM Sans',sans-serif;">
