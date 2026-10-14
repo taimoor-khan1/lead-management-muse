@@ -33,6 +33,21 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    public function leads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lead::class, 'owner_id');
+    }
+
+    public function tasks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    public function notes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LeadNote::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
