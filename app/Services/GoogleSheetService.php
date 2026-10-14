@@ -184,6 +184,8 @@ class GoogleSheetService
             'phone' => $this->nullIfEmpty($row['phone'] ?? null),
             'email' => $this->nullIfEmpty($row['email'] ?? null),
             'address' => $this->nullIfEmpty($row['address'] ?? null),
+            'latitude' => $this->nullIfDecimal($row['latitude'] ?? null),
+            'longitude' => $this->nullIfDecimal($row['longitude'] ?? null),
             'city' => $this->nullIfEmpty($row['city'] ?? null),
             'industry' => $this->nullIfEmpty($row['industry'] ?? null),
             'website' => $website !== '' ? $website : null,
@@ -200,5 +202,14 @@ class GoogleSheetService
         $value = is_string($value) ? trim($value) : $value;
 
         return $value === '' || $value === null ? null : (string) $value;
+    }
+
+    protected function nullIfDecimal(mixed $value): ?string
+    {
+        if ($value === null || $value === '' || $value === '—') {
+            return null;
+        }
+
+        return is_numeric($value) ? (string) $value : null;
     }
 }
