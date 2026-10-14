@@ -14,6 +14,15 @@ class ProductivityTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Pages are compiled by `npm run build` later (forbidden in this task);
+        // stub Vite so Inertia page renders don't need the manifest.
+        $this->withoutVite();
+    }
+
     public function test_task_crud_and_toggle(): void
     {
         $user = User::factory()->create();
